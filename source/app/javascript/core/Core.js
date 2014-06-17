@@ -87,7 +87,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			query.returnGeometry = true;
 			if (str){
 				var searchStr = str.replace("'","''");
-				query.where = "Tweet_ID LIKE '%" + searchStr + "%' OR Text LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%'";
+				query.where = "(Tweet_ID LIKE '%" + searchStr + "%' OR Text LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%') AND Matched = 1";
 			}
 			else{
 				query.where = "Vetted = 'U'";
