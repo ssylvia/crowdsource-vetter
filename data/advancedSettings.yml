@@ -1,15 +1,15 @@
 # APP SETTINGS
 
 # Used in various strings in within live app
-appName: World of Story Maps Editor
+appName: Maker Faire - Twitter Vetter
 # Single word app identifier to be used in build files and build process
-appIdentifier: WorldOfStoryMapsEditor
+appIdentifier: MakerFaireTwitterVetter
 
 
 # ARCGIS JAVASCRIPT API
 
 # ArcGIS Javascript API Version
-apiVersion: '3.7'
+apiVersion: '3.9'
 # Include Dijits CSS
 includeDijitCSS: true
 # Dojo Dijits CSS Theme (Choose: Claro, Tundra, Nihilo, Soria)

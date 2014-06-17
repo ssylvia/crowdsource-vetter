@@ -9,7 +9,7 @@ trackingId: UA-26529417-1
 # META & OPENGRAPH TAGS
 
 # title of story map
-metaTitle: World of Story Maps Editor
+metaTitle: Maker Faire - Twitter Vetter
 # Author of story map
 metaAuthor: Esri
 # Keywords to define story map
@@ -37,7 +37,7 @@ title: Add title here
 # App subtitle, leave black to use webmap subtitle
 subtitle: Add a subtitle here!
 
-featureService: http://services.arcgis.com/nzS0F0zdNLvs7nc8/ArcGIS/rest/services/WorldOfStoryMaps/FeatureServer/0
+featureService: http://services.arcgis.com/nzS0F0zdNLvs7nc8/arcgis/rest/services/NationOfMakersV2/FeatureServer/0
 
 authorizedEditors:
   - StoryMaps

@@ -57,3 +57,34 @@ body{
 .results, .upload-message, .search-message, .edit-message, .delete-message{
 	display: none;
 }
+
+.align-center{
+	text-align: center;
+}
+
+.approve-tweet{
+	width: 118px;
+}
+
+.hide-tweet{
+	width: 100px;
+}
+
+.approve-yes{
+	margin-right: 8px;
+}
+
+.approve-yes.active{
+	background-color: $lightest-green;
+	color: $dark-gray;
+}
+
+.approve-no.active{
+	background-color: $icon-red-lighter;
+	color: $dark-gray;
+}
+
+.hide-btn.active{
+	background-color: $icon-blue-lighter;
+	color: $dark-gray;
+}

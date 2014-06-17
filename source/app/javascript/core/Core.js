@@ -1,5 +1,5 @@
-define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/array","esri/arcgis/utils","esri/arcgis/Portal","esri/map","esri/tasks/query","esri/tasks/QueryTask","esri/dijit/Geocoder","esri/layers/GraphicsLayer","esri/graphic","esri/symbols/PictureMarkerSymbol","lib/jquery/jquery-1.10.2.min"],
-	function(MoveableGraphic,FeatureLayer,array,arcgisUtils,arcgisPortal,Map,Query,QueryTask,Geocoder,GraphicsLayer,Graphic,PictureMarkerSymbol){
+define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/array","esri/arcgis/utils","esri/arcgis/Portal","esri/map","esri/tasks/query","esri/tasks/QueryTask","lib/jquery/jquery-1.10.2.min"],
+	function(MoveableGraphic,FeatureLayer,array,arcgisUtils,arcgisPortal,Map,Query,QueryTask){
 
 		/**
 		* Core
@@ -11,11 +11,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 		*/
 
 		var _portal = new arcgisPortal.Portal("http://www.arcgis.com"),
-		_storyLayer = new FeatureLayer(configOptions.featureService),
-		_location,
-		_tempLocation,
-		_tempGraphic,
-		map;
+		_storyLayer = new FeatureLayer(configOptions.featureService);
 
 		function init ()
 		{
@@ -49,12 +45,6 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				queryItem(getItemId($("#form-item").val()));
 			});
 
-			$("#form-item").keypress(function(event){
-				if(event.which === 13){
-					queryItem(getItemId($("#form-item").val()));
-				}
-			});
-
 			$("#item-search-submit").click(function(){
 				searchItems($("#form-item-search").val());
 			});
@@ -65,78 +55,15 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				}
 			});
 
-			$("#item-add").click(function(){
-				addApplicaton();
-			});
-
 			$("#item-edit").click(function(){
 				editApplicaton();
-			});
-
-			$("#item-delete").click(function(){
-				deleteApplicaton();
 			});
 
 			$("#item-error-close").click(function(){
 				$("#item-error").hide();
 			});
 
-			$("#form-thumbnail").change(function(){
-				$("#thumbnail-preview").attr("src",$("#form-thumbnail").val());
-			});
-
-			$("body").scroll(function(){
-				map.resize();
-				map.reposition();
-			});
-
-			createMap();
-		}
-
-		function createMap()
-		{
-			map = new Map("map",{
-				basemap: "topo",
-				center: [-19,32],
-				zoom: 2
-			});
-
-			if(map.loaded){
-				addMapInterface(map);
-			}
-			else{
-				map.on("load",function(){
-					addMapInterface(map);
-				});
-			}
-		}
-
-		function addMapInterface()
-		{
-			var graphicsLayer = new GraphicsLayer();
-			map.addLayer(graphicsLayer);
-
-			var pt = map.extent.getCenter();
-			var sym = new PictureMarkerSymbol("resources/images/RedPin.png",30,35).setOffset(0,7);
-
-			_tempLocation = new Graphic(pt,sym);
-			graphicsLayer.add(_tempLocation);
-
-			_location = pt;
-
-			new MoveableGraphic(map,graphicsLayer,_tempLocation,function(graphic){
-				_location = graphic.geometry;
-			});
-
-			var geocoder = new Geocoder({
-				map: map,
-				maxLocations: 1
-			},"geocoder");
-
-			geocoder.on("select",function(result){
-				_location = result.result.feature.geometry;
-				_tempLocation.setGeometry(_location);
-			});
+			searchItems();
 		}
 
 		function getItemId(str)
@@ -154,12 +81,17 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 
 		function searchItems(str)
 		{
-			var searchStr = str.replace("'","''");
 			$(".search-message").show();
 			var query = new Query();
 			query.outFields = ["*"];
 			query.returnGeometry = true;
-			query.where = "Name LIKE '%" + searchStr + "%' OR TemplateText LIKE '%" + searchStr + "%' OR Description LIKE '%" + searchStr + "%' OR Publisher LIKE '%" + searchStr + "%'";
+			if (str){
+				var searchStr = str.replace("'","''");
+				query.where = "Tweet_ID LIKE '%" + searchStr + "%' OR Text LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%'";
+			}
+			else{
+				query.where = "Vetted = 'U'";
+			}
 
 			var queryTask = new QueryTask(_storyLayer.url);
 			queryTask.execute(query,function(result){			
@@ -169,38 +101,46 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				array.forEach(result.features,function(ftr){
 					$(".results tbody").append('\
 						<tr>\
-							<td><span class="icon-edit btn">Edit</span></td>\
-							<td>' + ftr.attributes.Name + '</td>\
-							<td>' + ftr.attributes.Description + '</td>\
-							<td>' + ftr.attributes.Publisher + '</td>\
+							<td>' + ftr.attributes.Text + '</td>\
+							<td class="approve-tweet align-center"><span class="approve-yes approve-btn btn' + getActiveState(ftr,'approveYes') + '">Yes</span><span class="approve-no approve-btn btn' + getActiveState(ftr,'approveNo') + '">No</span></td>\
+							<td class="hide-tweet align-center"><span class="hide-btn btn' + getActiveState(ftr,'hide') + '">Hide</span></td>\
 						</tr>\
 					');
 
-					$(".results tbody .icon-edit").last().data("graphic",ftr).click(function(){
-						var item = $(this).data("graphic").attributes;
-						_tempGraphic = $(this).data("graphic");
-						$("#form-name").val(item.Name);
-						$("#form-description").val(item.Description);
-						$("#form-publisher").val(item.Publisher);
-						$("#form-url").val(item.Story_URL);
-						$("#form-thumbnail").val(item.Image_URL);
-						$("#form-template").val(item.TemplateText);
-						$("#thumbnail-preview").attr("src",item.Image_URL);
-						_tempLocation.setGeometry(_tempGraphic.geometry);
-						_location = _tempGraphic.geometry;
-						map.centerAt(_tempGraphic.geometry);
+					$(".results tbody tr").last().data('ftr',ftr);
 
-						map.resize();
-						map.reposition();
-					});
+				});
 
+				$('.approve-btn').click(function(){
+					var graphic = $(this).parents('tr').data('ftr').attributes;
+					$(this).parents('tr').addClass('data-changed');
+					$(this).toggleClass('active');
+					$(this).siblings('.approve-btn').removeClass('active');
+					if ($(this).hasClass('active') && $(this).hasClass('approve-yes')){
+						graphic.Vetted = 'T';
+					}
+					else if ($(this).hasClass('active') && $(this).hasClass('approve-no')){
+						graphic.Vetted = 'F';
+					}
+					else{
+						graphic.Vetted = 'U';
+					}
+				});
+
+				$('.hide-btn').click(function(){
+					$(this).toggleClass('active');
+					var graphic = $(this).parents('tr').data('ftr').attributes;
+					$(this).parents('tr').addClass('data-changed');
+					if ($(this).hasClass('active')){
+						graphic.Hide = '1';
+					}
+					else{
+						graphic.Hide = '0';
+					}
 				});
 
 				$(".results").show();
 				$(".search-message").hide();
-
-				map.resize();
-				map.reposition();
 			});
 		}
 
@@ -210,7 +150,6 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			arcgisUtils.getItem(item).then(function(result){
 				$(".search-message").hide();
 				var item = result.item;
-				console.log(item);
 				if (item.type === "Web Mapping Application"){
 					var thumbnail = "http://www.arcgis.com/sharing/rest/content/items/" + item.id + "/info/" + item.thumbnail;
 					$("#item-error").hide();
@@ -229,165 +168,51 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			});
 		}
 
-		function addApplicaton()
+		function getActiveState(ftr,item)
 		{
-			if(errorCheck()){
-				var attr = {
-					Name: $("#form-name").val(),
-					Description: $("#form-description").val(),
-					Publisher: $("#form-publisher").val(),
-					Story_URL: $("#form-url").val(),
-					Image_URL: $("#form-thumbnail").val(),
-					TemplateText: $("#form-template").val()
-				};
-
-				var app = new Graphic(_location,null,attr);
-
-				$(".upload-message").hide();
-				$(".upload-message.sync").show();
-
-				_storyLayer.applyEdits([app]).then(function(result){
-					var error = false;
-					array.forEach(result,function(r){
-						if (!r.success){
-							error = true;
-							console.log(r.error);
-						}
-					});
-					if(error){
-						$(".upload-message").hide();
-						$(".upload-message.error").show();
-					}
-					else{
-						$(".upload-message").hide();
-						$(".upload-message.success").show();
-					}
-				},function(){
-					$(".upload-message").hide();
-					$(".upload-message.error").show();
-				});
+			if (item === 'approveYes' && ftr.attributes.Vetted === 'T'){
+				return ' active';
+			}
+			else if (item === 'approveNo' && ftr.attributes.Vetted === 'F'){
+				return ' active';
+			}
+			else if (item === 'hide' && ftr.attributes.Hide === '1'){
+				return ' active';
+			}
+			else{
+				return '';
 			}
 		}
 
 		function editApplicaton()
 		{
-			if(errorCheck()){
-				var attr = {
-					OBJECTID: _tempGraphic.attributes.OBJECTID,
-					Name: $("#form-name").val(),
-					Description: $("#form-description").val(),
-					Publisher: $("#form-publisher").val(),
-					Story_URL: $("#form-url").val(),
-					Image_URL: $("#form-thumbnail").val(),
-					TemplateText: $("#form-template").val()
-				};
+			var features = [];
 
-				var app = new Graphic(_location,null,attr);
+			$('.data-changed').each(function(){
+				var ftr = $(this).data('ftr');
+				features.push(ftr);
+			});
 
-				$(".edit-message").hide();
-				$(".delete-message").hide();
-				$(".edit-message.sync").show();
-
-				_storyLayer.applyEdits(null,[app]).then(function(result){
-					var error = false;
-					array.forEach(result,function(r){
-						if (!r.success){
-							error = true;
-							console.log(r.error);
-						}
-					});
-					if(error){
-						$(".edit-message").hide();
-						$(".edit-message.error").show();
+			_storyLayer.applyEdits(null,features).then(function(result){
+				var error = false;
+				array.forEach(result,function(r){
+					if (!r.success){
+						error = true;
+						console.log(r.error);
 					}
-					else{
-						$(".edit-message").hide();
-						$(".edit-message.success").show();
-					}
-				},function(){
+				});
+				if(error){
 					$(".edit-message").hide();
 					$(".edit-message.error").show();
-				});
-			}
-		}
-
-		function deleteApplicaton()
-		{
-			if(confirm("Are you sure you want to delete this application from the World of Story Maps?")){
-
+				}
+				else{
+					$(".edit-message").hide();
+					$(".edit-message.success").show();
+				}
+			},function(){
 				$(".edit-message").hide();
-				$(".delete-message").hide();
-				$(".delete-message.sync").show();
-
-				_storyLayer.applyEdits(null,null,[_tempGraphic]).then(function(result){
-					var error = false;
-					array.forEach(result,function(r){
-						if (!r.success){
-							error = true;
-							console.log(r.error);
-						}
-					});
-					if(error){
-						$(".delete-message").hide();
-						$(".delete-message.error").show();
-					}
-					else{
-						$(".delete-message").hide();
-						$(".delete-message.success").show();
-					}
-				},function(){
-					$(".delete-message").hide();
-					$(".delete-message.error").show();
-				});
-			}
-		}
-
-		function errorCheck()
-		{
-			var noErrors = true;
-
-			if ($("#form-name").val() !== ""){
-				$("#name-error").hide();
-			}
-			else{
-				$("#name-error").show();
-				noErrors = false;
-			}
-
-			if ($("#form-description").val() !== ""){
-				$("#description-error").hide();
-			}
-			else{
-				$("#description-error").show();
-				noErrors = false;
-			}
-
-			if ($("#form-publisher").val() !== ""){
-				$("#publisher-error").hide();
-			}
-			else{
-				$("#publisher-error").show();
-				noErrors = false;
-			}
-
-			if ($("#form-url").val() !== ""){
-				$("#url-error").hide();
-			}
-			else{
-				$("#url-error").show();
-				noErrors = false;
-			}
-
-			if ($("#form-thumbnail").val() !== ""){
-				$("#thumbnail-error").hide();
-			}
-			else{
-				$("#thumbnail-error").show();
-				noErrors = false;
-			}
-
-
-			return noErrors;
+				$(".edit-message.error").show();
+			});
 		}
 
 		return {
