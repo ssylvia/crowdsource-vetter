@@ -14,6 +14,7 @@
 
 		"$": false,
 		"esri": false,
+		"twttr": false,
 
 		"APPCFG": true,
 		"configOptions": false,

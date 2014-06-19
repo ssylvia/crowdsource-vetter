@@ -88,3 +88,45 @@ body{
 	background-color: $icon-blue-lighter;
 	color: $dark-gray;
 }
+
+.tweet-display{
+	width: 512px;
+}
+
+.loader{
+	margin-left: 601px;
+}
+
+.hidden, .hide-field{
+	display: none;
+}
+
+.showHideField .hide-field{
+	display: table-cell;
+}
+
+#search-field, #service-prompt, .service-message{
+	display: none;
+}
+
+#service-prompt input{
+	max-width: none;
+}
+
+.results .input-list{
+	margin-top: 0;
+}
+
+.results tbody td{
+	vertical-align: top;
+}
+
+.pagination-previous, .pagination-next{
+	cursor: pointer;
+}
+
+.pagination-page input{
+	width: 35px;
+	display: inline;
+	padding-right: .5em;
+}

@@ -1,6 +1,6 @@
 # Middleman Config
 
-require "arcgis-framework"
+require "tailcoat"
 
 module GruntJS
     class << self

@@ -1,5 +1,5 @@
-define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/array","esri/arcgis/utils","esri/arcgis/Portal","esri/map","esri/tasks/query","esri/tasks/QueryTask","lib/jquery/jquery-1.10.2.min"],
-	function(MoveableGraphic,FeatureLayer,array,arcgisUtils,arcgisPortal,Map,Query,QueryTask){
+define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/array","esri/arcgis/utils","esri/arcgis/Portal","esri/map","esri/tasks/query","esri/tasks/QueryTask","esri/request","esri/urlUtils","lib/jquery/jquery-1.10.2.min"],
+	function(MoveableGraphic,FeatureLayer,array,arcgisUtils,arcgisPortal,Map,Query,QueryTask,esriRequest,urlUtils){
 
 		/**
 		* Core
@@ -11,11 +11,30 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 		*/
 
 		var _portal = new arcgisPortal.Portal("http://www.arcgis.com"),
-		_storyLayer = new FeatureLayer(configOptions.featureService);
+		_storyLayer,
+		_sortOrder = 'DESC',
+		_currentSearch = '',
+		_displayLength = 20,
+		_allResults,
+		_pages,
+		_currentPage;
 
 		function init ()
 		{
-			login();
+			var urlSearch = urlUtils.urlToObject(location.href);
+			if (urlSearch.query && urlSearch.query.service){
+				_storyLayer = new FeatureLayer(urlSearch.query.service);
+			}
+			else if (configOptions.featureService){
+				_storyLayer = new FeatureLayer(configOptions.featureService);
+			}
+			else{
+				promptForService();
+			}
+
+			if (_storyLayer){
+				login();
+			}
 		}
 
 		function login()
@@ -29,11 +48,14 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				});
 
 				if (load){
+					$('.loader, #service-prompt').hide();
 					esri.id.getCredential(_storyLayer.url);
 					addFormEvents();
+					$("#service-name").html(_storyLayer.name);
+					$("#search-field").show();
 				}
 				else{
-					alert("You do not have permission to edit the World of Story Maps App.");
+					alert("You do not have permission to edit this service.");
 					location.reload();
 				}
 			});
@@ -55,12 +77,27 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				}
 			});
 
-			$("#item-edit").click(function(){
-				editApplicaton();
-			});
-
 			$("#item-error-close").click(function(){
 				$("#item-error").hide();
+			});
+
+			$('#option-hide').click(function(){
+				if ($(this).is(':checked')){
+					$('body').addClass('showHideField');
+				}
+				else{
+					$('body').removeClass('showHideField');
+				}	
+			});
+
+			$('#option-reverse').click(function(){
+				if (_sortOrder === 'DESC'){
+					_sortOrder = 'ASC';
+				}
+				else{
+					_sortOrder = 'DESC';
+				}
+				searchItems(_currentSearch);
 			});
 
 			searchItems();
@@ -79,12 +116,15 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			}
 		}
 
-		function searchItems(str)
+		function searchItems(str,start)
 		{
 			$(".search-message").show();
 			var query = new Query();
 			query.outFields = ["*"];
 			query.returnGeometry = true;
+			query.num = _displayLength;
+			query.start = start ? start : 0;
+			query.orderByFields = ["FID " + _sortOrder];
 			if (str){
 				var searchStr = str.replace("'","''");
 				query.where = "(Tweet_ID LIKE '%" + searchStr + "%' OR Text LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%') AND Matched = 1";
@@ -94,53 +134,133 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			}
 
 			var queryTask = new QueryTask(_storyLayer.url);
-			queryTask.execute(query,function(result){			
+			queryTask.execute(query,function(result){	
 
 				$(".results tbody").empty();
 
-				array.forEach(result.features,function(ftr){
-					$(".results tbody").append('\
-						<tr>\
-							<td>' + ftr.attributes.Text + '</td>\
-							<td class="approve-tweet align-center"><span class="approve-yes approve-btn btn' + getActiveState(ftr,'approveYes') + '">Yes</span><span class="approve-no approve-btn btn' + getActiveState(ftr,'approveNo') + '">No</span></td>\
-							<td class="hide-tweet align-center"><span class="hide-btn btn' + getActiveState(ftr,'hide') + '">Hide</span></td>\
-						</tr>\
-					');
-
-					$(".results tbody tr").last().data('ftr',ftr);
-
-				});
-
-				$('.approve-btn').click(function(){
-					var graphic = $(this).parents('tr').data('ftr').attributes;
-					$(this).parents('tr').addClass('data-changed');
-					$(this).toggleClass('active');
-					$(this).siblings('.approve-btn').removeClass('active');
-					if ($(this).hasClass('active') && $(this).hasClass('approve-yes')){
-						graphic.Vetted = 'T';
-					}
-					else if ($(this).hasClass('active') && $(this).hasClass('approve-no')){
-						graphic.Vetted = 'F';
-					}
-					else{
-						graphic.Vetted = 'U';
-					}
-				});
-
-				$('.hide-btn').click(function(){
-					$(this).toggleClass('active');
-					var graphic = $(this).parents('tr').data('ftr').attributes;
-					$(this).parents('tr').addClass('data-changed');
-					if ($(this).hasClass('active')){
-						graphic.Hide = '1';
-					}
-					else{
-						graphic.Hide = '0';
-					}
-				});
+				setResults(result.features,query,str);
 
 				$(".results").show();
 				$(".search-message").hide();
+			});
+		}
+
+		function setResults(tweets,query,search)
+		{
+			_allResults = tweets;
+
+			if (query.start === 0){
+				_currentPage = 0;
+				_storyLayer.queryCount(query,function(count){
+					_pages = Math.floor(count/_displayLength) + (count % _displayLength > 0 ? 1 : 0);
+					_currentSearch = search;
+
+					var htmlString = '\
+					<p class="pagination-previous">\
+						<span class="icon-left-arrow"></span>\
+					</p>';
+					
+					var pageString = '\
+					<li class="pagination-page">\
+						<input type="text" value="1" /> of ' + (_pages + 1) + '\
+					</li>';
+
+					htmlString = htmlString + pageString;
+					
+					htmlString = htmlString + '\
+					<p class="pagination-next">\
+						<span class="icon-right-arrow"></span>\
+					</p>';
+
+					$("#pager .pagination").html(htmlString);
+
+					$(".pagination-previous").click(function(){
+						if (_currentPage > 0){
+							_currentPage--;
+							$(".pagination-page input").val(_currentPage + 1);
+
+							searchItems(search,(_currentPage * _displayLength));
+						}
+					});
+
+					$(".pagination-next").click(function(){
+						if (_currentPage < _pages){
+							_currentPage++;
+							$(".pagination-page input").val(_currentPage + 1);
+
+							searchItems(search,(_currentPage * _displayLength));
+						}
+					});
+
+					$(".pagination-page input").keypress(function(event){
+						if(event.which === 13){
+							_currentPage = $(this).val() - 1;
+
+							searchItems(search,(_currentPage * _displayLength));
+						}
+					});
+				});
+			}
+
+			displayResults(_allResults.slice(0,_displayLength - 1));
+
+		}
+
+		function displayResults(result){
+			$(".results tbody").html("");
+			array.forEach(result,function(ftr){
+				$(".results tbody").append('\
+					<tr class="hidden">\
+						<td class="tweet-' + ftr.attributes.Tweet_ID + ' tweet-display">' + ftr.attributes.Text + '</td>\
+						<td><strong>FID</strong>: ' + ftr.attributes.FID + '<br><strong>Tweet ID</strong>: ' + ftr.attributes.Tweet_ID + '<br><strong>User ID</strong>: ' + ftr.attributes.User_ID + '<br><strong>Location</strong>: ' + ftr.attributes.Standardized_Location + '</td>\
+						<td class="approve-tweet align-center"><span class="approve-yes approve-btn btn gray' + getActiveState(ftr,'approveYes') + '">Yes</span><span class="approve-no approve-btn btn gray' + getActiveState(ftr,'approveNo') + '">No</span></td>\
+						<td class="hide-tweet align-center hide-field"><span class="hide-btn btn gray' + getActiveState(ftr,'hide') + '">Hide</span></td>\
+					</tr>\
+				');
+
+				$(".results tbody tr").last().data('ftr',ftr);
+
+				var request = esriRequest({
+					url: 'https://api.twitter.com/1/statuses/oembed.json?omit_script=true&id=' + ftr.attributes.Tweet_ID,
+					handleAs: "json",
+					callbackParamName: "callback"
+				});
+				request.then(function(tweets){
+					$('.tweet-' + ftr.attributes.Tweet_ID).html(tweets.html);
+					$('.tweet-' + ftr.attributes.Tweet_ID).parents('tr').removeClass('hidden');
+					twttr.widgets.load();
+				});
+
+			});
+
+			$('.approve-btn').click(function(){
+				var graphic = $(this).parents('tr').data('ftr').attributes;
+				$(this).parents('tr').addClass('data-changed');
+				$(this).toggleClass('active');
+				$(this).siblings('.approve-btn').removeClass('active');
+				if ($(this).hasClass('active') && $(this).hasClass('approve-yes')){
+					graphic.Vetted = 'T';
+				}
+				else if ($(this).hasClass('active') && $(this).hasClass('approve-no')){
+					graphic.Vetted = 'F';
+				}
+				else{
+					graphic.Vetted = 'U';
+				}
+				editApplicaton();
+			});
+
+			$('.hide-btn').click(function(){
+				$(this).toggleClass('active');
+				var graphic = $(this).parents('tr').data('ftr').attributes;
+				$(this).parents('tr').addClass('data-changed');
+				if ($(this).hasClass('active')){
+					graphic.Hide = '1';
+				}
+				else{
+					graphic.Hide = '0';
+				}
+				editApplicaton();
 			});
 		}
 
@@ -209,9 +329,35 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 					$(".edit-message").hide();
 					$(".edit-message.success").show();
 				}
+				$('.data-changed').removeClass('data-changed');
 			},function(){
 				$(".edit-message").hide();
 				$(".edit-message.error").show();
+				$('.data-changed').removeClass('data-changed');
+			});
+		}
+
+		function promptForService()
+		{
+			$('.loader').hide();
+			$('#service-prompt').show();
+
+			$("#item-service-submit").click(function(){
+				if ($("#service-prompt input").val()){
+					$(".service-message").show();
+					_storyLayer = new FeatureLayer($("#service-prompt input").val());
+					login();
+				}
+			});
+
+			$("#service-prompt input").keypress(function(event){
+				if(event.which === 13){
+					if ($("#service-prompt input").val()){
+						$(".service-message").show();
+						_storyLayer = new FeatureLayer($("#service-prompt input").val());
+						login();
+					}
+				}
 			});
 		}
 

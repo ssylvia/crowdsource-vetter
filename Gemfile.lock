@@ -1,36 +1,35 @@
 GIT
-  remote: git@github.com:ArcGIS/arcgis-for-developers-css.git
-  revision: 4a8f25cbfee29ac7102d0544e892ee8e5095db21
-  tag: 0.1.5
+  remote: git@github.com:ArcGIS/tailcoat.git
+  revision: f1394be997e74deb438ed9017ce834685178ec6a
+  tag: v1.1.2
   specs:
-    arcgis-framework (0.1.4.beta)
+    tailcoat (1.1.2)
       compass (~> 0.12.2)
 
 GEM
   remote: http://rubygems.org/
   specs:
-    activesupport (3.2.15)
+    activesupport (3.2.18)
       i18n (~> 0.6, >= 0.6.4)
       multi_json (~> 1.0)
-    chunky_png (1.2.9)
+    chunky_png (1.3.1)
     coffee-script (2.2.0)
       coffee-script-source
       execjs
-    coffee-script-source (1.6.3)
-    compass (0.12.2)
+    coffee-script-source (1.7.0)
+    compass (0.12.6)
       chunky_png (~> 1.2)
       fssm (>= 0.2.7)
-      sass (~> 3.1)
+      sass (~> 3.2.19)
     execjs (1.4.0)
       multi_json (~> 1.0)
-    ffi (1.9.0)
-    ffi (1.9.0-x86-mingw32)
+    ffi (1.9.3)
     fssm (0.2.10)
-    haml (4.0.3)
+    haml (4.0.5)
       tilt
     hike (1.2.3)
-    i18n (0.6.5)
-    kramdown (1.2.0)
+    i18n (0.6.9)
+    kramdown (1.3.3)
     listen (1.3.1)
       rb-fsevent (>= 0.9.3)
       rb-inotify (>= 0.9)
@@ -62,38 +61,36 @@ GEM
       sprockets (~> 2.1)
       sprockets-helpers (~> 1.0.0)
       sprockets-sass (~> 1.0.0)
-    multi_json (1.8.2)
+    multi_json (1.10.1)
     rack (1.5.2)
     rack-test (0.6.2)
       rack (>= 1.0)
-    rb-fsevent (0.9.3)
-    rb-inotify (0.9.2)
+    rb-fsevent (0.9.4)
+    rb-inotify (0.9.5)
       ffi (>= 0.5.0)
-    rb-kqueue (0.2.0)
+    rb-kqueue (0.2.3)
       ffi (>= 0.5.0)
-    sass (3.2.12)
-    sprockets (2.10.0)
+    sass (3.2.19)
+    sprockets (2.12.1)
       hike (~> 1.2)
       multi_json (~> 1.0)
       rack (~> 1.0)
       tilt (~> 1.1, != 1.3.0)
     sprockets-helpers (1.0.1)
       sprockets (~> 2.0)
-    sprockets-sass (1.0.2)
+    sprockets-sass (1.0.3)
       sprockets (~> 2.0)
       tilt (~> 1.1)
-    thor (0.18.1)
+    thor (0.19.1)
     tilt (1.3.7)
     uglifier (2.1.2)
       execjs (>= 0.3.0)
       multi_json (~> 1.0, >= 1.0.2)
-    wdm (0.0.3)
 
 PLATFORMS
   ruby
-  x86-mingw32
 
 DEPENDENCIES
-  arcgis-framework!
   middleman (~> 3.1.4)
+  tailcoat!
   wdm (~> 0.0.3)

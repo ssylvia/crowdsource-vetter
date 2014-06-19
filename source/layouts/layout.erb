@@ -79,18 +79,24 @@
 		<div class="container">
 			<div class="row">
 				<div class="inner-header">
-					<div class="logo-wrap">
-						<h2 id="site-logo"><%= data.advancedSettings.appName %></h2>
-					</div>
-					<div id="esri-logo">Esri</div>
+					<div class="site-brand"><%= data.advancedSettings.appName %></div>
 				</div>
 			</div>
 		</div>
 	</header>
 
+	<div class="navigation-bar no-nav trailer-2">
+		<div class="container">
+			<header>
+				<h1 id="service-name">&nbsp;</h1>
+			</header>
+		</div>
+	</div>
+
 	<%= yield %>
 	
 	<%= javascript_include_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/" %>
+	<script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 	<script type="text/javascript">
 
 	var configOptions = {

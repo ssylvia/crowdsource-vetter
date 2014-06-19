@@ -1,9 +1,9 @@
 # APP SETTINGS
 
 # Used in various strings in within live app
-appName: Maker Faire - Twitter Vetter
+appName: Twitter Vetter
 # Single word app identifier to be used in build files and build process
-appIdentifier: MakerFaireTwitterVetter
+appIdentifier: TwitterVetter
 
 
 # ARCGIS JAVASCRIPT API
