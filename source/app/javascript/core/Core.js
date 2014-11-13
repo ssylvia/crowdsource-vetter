@@ -22,7 +22,6 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 		function init ()
 		{
 			$.get('/api/getServiceUrl').done(function(res){
-				console.log(res);
 				var urlSearch = urlUtils.urlToObject(location.href);
 				if (res){
 					_storyLayer = new FeatureLayer(res);
@@ -93,6 +92,15 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				}
 				else{
 					$('body').removeClass('showHideField');
+				}	
+			});
+
+			$('#option-delete').click(function(){
+				if ($(this).is(':checked')){
+					$('body').addClass('showDeleteField');
+				}
+				else{
+					$('body').removeClass('showDeleteField');
 				}	
 			});
 
@@ -221,6 +229,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 						<td><strong>FID</strong>: ' + ftr.attributes.FID + '<br><strong>Location</strong>: ' + ftr.attributes.standardPlace + '</td>\
 						<td class="approve-tweet align-center"><span class="approve-yes approve-btn btn gray' + getActiveState(ftr,'approveYes') + '">Yes</span><span class="approve-no approve-btn btn gray' + getActiveState(ftr,'approveNo') + '">No</span></td>\
 						<td class="hide-tweet align-center hide-field"><span class="hide-btn btn gray' + getActiveState(ftr,'hide') + '">Hide</span></td>\
+						<td class="delete-share align-center delete-field"><span class="delete-btn btn red">Delete</span></td>\
 					</tr>\
 				');
 
@@ -242,7 +251,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				else{
 					graphic.vetted = 'U';
 				}
-				editApplicaton();
+				editApplication();
 			});
 
 			$('.hide-btn').click(function(){
@@ -255,7 +264,17 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				else{
 					graphic.hide = '0';
 				}
-				editApplicaton();
+				editApplication();
+			});
+
+			$('.delete-btn').click(function(){
+				if (confirm('Are you sure you want to delete this share? This cannot be undone.')){
+					var graphic = $(this).parents('tr').data('ftr');
+					_storyLayer.applyEdits(null,null,[graphic]).then(function(result){
+						console.log(result);
+						searchItems(_currentSearch);
+					});
+				}
 			});
 		}
 
@@ -291,7 +310,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			else if (item === 'approveNo' && ftr.attributes.vetted === 'F'){
 				return ' active';
 			}
-			else if (item === 'hide' && ftr.attributes.hide === '1'){
+			else if (item === 'hide' && ftr.attributes.hide == 1){
 				return ' active';
 			}
 			else{
@@ -299,7 +318,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			}
 		}
 
-		function editApplicaton()
+		function editApplication()
 		{
 			var features = [];
 

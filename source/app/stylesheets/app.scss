@@ -97,11 +97,15 @@ body{
 	margin-left: 601px;
 }
 
-.hidden, .hide-field{
+.hidden, .hide-field, .delete-field{
 	display: none;
 }
 
 .showHideField .hide-field{
+	display: table-cell;
+}
+
+.showDeleteField .delete-field{
 	display: table-cell;
 }
 
