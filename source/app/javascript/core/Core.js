@@ -21,20 +21,26 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 
 		function init ()
 		{
-			var urlSearch = urlUtils.urlToObject(location.href);
-			if (urlSearch.query && urlSearch.query.service){
-				_storyLayer = new FeatureLayer(urlSearch.query.service);
-			}
-			else if (configOptions.featureService){
-				_storyLayer = new FeatureLayer(configOptions.featureService);
-			}
-			else{
-				promptForService();
-			}
+			$.get('/api/getServiceUrl').done(function(res){
+				console.log(res);
+				var urlSearch = urlUtils.urlToObject(location.href);
+				if (res){
+					_storyLayer = new FeatureLayer(res);
+				}
+				else if (urlSearch.query && urlSearch.query.service){
+					_storyLayer = new FeatureLayer(urlSearch.query.service);
+				}
+				else if (configOptions.featureService){
+					_storyLayer = new FeatureLayer(configOptions.featureService);
+				}
+				else{
+					promptForService();
+				}
 
-			if (_storyLayer){
-				login();
-			}
+				if (_storyLayer){
+					login();
+				}
+			});
 		}
 
 		function login()
@@ -127,10 +133,10 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			query.orderByFields = ["FID " + _sortOrder];
 			if (str){
 				var searchStr = str.replace("'","''");
-				query.where = "(Tweet_ID LIKE '%" + searchStr + "%' OR Text LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%') AND Matched = 1";
+				query.where = "(title LIKE '%" + searchStr + "%' OR content LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%' OR standardPlace LIKE '%" + searchStr + "%')";
 			}
 			else{
-				query.where = "Vetted = 'U' AND Matched = 1";
+				query.where = "vetted = 'U'";
 			}
 
 			var queryTask = new QueryTask(_storyLayer.url);
@@ -152,7 +158,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			if (query.start === 0){
 				_currentPage = 0;
 				_storyLayer.queryCount(query,function(count){
-					_pages = Math.floor(count/_displayLength) + (count % _displayLength > 0 ? 1 : 0);
+					_pages = Math.floor(count/_displayLength) - 1 + (count % _displayLength > 0 ? 1 : 0);
 					_currentSearch = search;
 
 					var htmlString = '\
@@ -210,26 +216,15 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			$(".results tbody").html("");
 			array.forEach(result,function(ftr){
 				$(".results tbody").append('\
-					<tr class="hidden">\
-						<td class="tweet-' + ftr.attributes.Tweet_ID + ' tweet-display">' + ftr.attributes.Text + '</td>\
-						<td><strong>FID</strong>: ' + ftr.attributes.FID + '<br><strong>Tweet ID</strong>: ' + ftr.attributes.Tweet_ID + '<br><strong>User ID</strong>: ' + ftr.attributes.User_ID + '<br><strong>Location</strong>: ' + ftr.attributes.Standardized_Location + '</td>\
+					<tr>\
+						<td><div class="share-entry">' + decodeURI(ftr.attributes.media) + '<h4 class="title">' + ftr.attributes.title + '</h4>' + decodeURI(ftr.attributes.content) + '</div></td>\
+						<td><strong>FID</strong>: ' + ftr.attributes.FID + '<br><strong>Location</strong>: ' + ftr.attributes.standardPlace + '</td>\
 						<td class="approve-tweet align-center"><span class="approve-yes approve-btn btn gray' + getActiveState(ftr,'approveYes') + '">Yes</span><span class="approve-no approve-btn btn gray' + getActiveState(ftr,'approveNo') + '">No</span></td>\
 						<td class="hide-tweet align-center hide-field"><span class="hide-btn btn gray' + getActiveState(ftr,'hide') + '">Hide</span></td>\
 					</tr>\
 				');
 
 				$(".results tbody tr").last().data('ftr',ftr);
-
-				var request = esriRequest({
-					url: 'https://api.twitter.com/1/statuses/oembed.json?omit_script=true&id=' + ftr.attributes.Tweet_ID,
-					handleAs: "json",
-					callbackParamName: "callback"
-				});
-				request.then(function(tweets){
-					$('.tweet-' + ftr.attributes.Tweet_ID).html(tweets.html);
-					$('.tweet-' + ftr.attributes.Tweet_ID).parents('tr').removeClass('hidden');
-					twttr.widgets.load();
-				});
 
 			});
 
@@ -239,13 +234,13 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				$(this).toggleClass('active');
 				$(this).siblings('.approve-btn').removeClass('active');
 				if ($(this).hasClass('active') && $(this).hasClass('approve-yes')){
-					graphic.Vetted = 'T';
+					graphic.vetted = 'T';
 				}
 				else if ($(this).hasClass('active') && $(this).hasClass('approve-no')){
-					graphic.Vetted = 'F';
+					graphic.vetted = 'F';
 				}
 				else{
-					graphic.Vetted = 'U';
+					graphic.vetted = 'U';
 				}
 				editApplicaton();
 			});
@@ -255,10 +250,10 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				var graphic = $(this).parents('tr').data('ftr').attributes;
 				$(this).parents('tr').addClass('data-changed');
 				if ($(this).hasClass('active')){
-					graphic.Hide = '1';
+					graphic.hide = '1';
 				}
 				else{
-					graphic.Hide = '0';
+					graphic.hide = '0';
 				}
 				editApplicaton();
 			});
@@ -290,13 +285,13 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 
 		function getActiveState(ftr,item)
 		{
-			if (item === 'approveYes' && ftr.attributes.Vetted === 'T'){
+			if (item === 'approveYes' && ftr.attributes.vetted === 'T'){
 				return ' active';
 			}
-			else if (item === 'approveNo' && ftr.attributes.Vetted === 'F'){
+			else if (item === 'approveNo' && ftr.attributes.vetted === 'F'){
 				return ' active';
 			}
-			else if (item === 'hide' && ftr.attributes.Hide === '1'){
+			else if (item === 'hide' && ftr.attributes.hide === '1'){
 				return ' active';
 			}
 			else{

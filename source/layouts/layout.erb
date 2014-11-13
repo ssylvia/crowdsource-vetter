@@ -40,9 +40,9 @@
 	<!-- load Avenir from fonts.com  this is will only work on localhost, arcgis.com or esri.com domains -->
 	<%= stylesheet_link_tag "//fast.fonts.com/cssapi/4a60d16b-c9e4-404d-89d3-809adb97d65c.css" %>
 	<% if data.advancedSettings.includeDijitCSS && data.advancedSettings.dijitsTheme %>
-	<%= stylesheet_link_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/js/dojo/dijit/themes/" + data.advancedSettings.dijitsTheme + "/" + data.advancedSettings.dijitsTheme + ".css" %>
+	<%= stylesheet_link_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/dijit/themes/" + data.advancedSettings.dijitsTheme + "/" + data.advancedSettings.dijitsTheme + ".css" %>
 	<% end %>
-	<%= stylesheet_link_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/js/esri/css/esri.css" %>
+	<%= stylesheet_link_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/esri/css/esri.css" %>
 	<%= stylesheet_link_tag "app" %>
 
 	<!--[if lt IE 9]>
@@ -96,7 +96,6 @@
 	<%= yield %>
 	
 	<%= javascript_include_tag "//js" + (data.advancedSettings.useDevAPI ? "dev" : "") + ".arcgis.com/" + data.advancedSettings.apiVersion + "/" %>
-	<script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 	<script type="text/javascript">
 
 	var configOptions = {

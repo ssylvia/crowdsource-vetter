@@ -1,15 +1,15 @@
 # APP SETTINGS
 
 # Used in various strings in within live app
-appName: Twitter Vetter
+appName: Crowdsource Vetter
 # Single word app identifier to be used in build files and build process
-appIdentifier: TwitterVetter
+appIdentifier: CrowdsourceVetter
 
 
 # ARCGIS JAVASCRIPT API
 
 # ArcGIS Javascript API Version
-apiVersion: '3.9'
+apiVersion: '3.11'
 # Include Dijits CSS
 includeDijitCSS: true
 # Dojo Dijits CSS Theme (Choose: Claro, Tundra, Nihilo, Soria)

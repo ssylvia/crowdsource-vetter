@@ -9,7 +9,7 @@ trackingId: UA-26529417-1
 # META & OPENGRAPH TAGS
 
 # title of story map
-metaTitle: Twitter Vetter
+metaTitle: Crowdsource Vetter
 # Author of story map
 metaAuthor: Esri
 # Keywords to define story map
@@ -41,6 +41,7 @@ featureService: ""
 
 authorizedEditors:
   - StoryMaps
+  - smcrowdsourcer
 
 applicationTemplates:
   - Custom
