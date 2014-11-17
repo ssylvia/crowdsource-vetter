@@ -15,6 +15,7 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 		_sortOrder = 'DESC',
 		_currentSearch = '',
 		_displayLength = 20,
+		_showVettedToggleStr = "vetted = 'U'",
 		_allResults,
 		_pages,
 		_currentPage;
@@ -114,6 +115,16 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 				searchItems(_currentSearch);
 			});
 
+			$('#option-show-all').click(function(){
+				if ($(this).is(':checked')){
+					_showVettedToggleStr = "vetted != 'U'";
+				}
+				else{
+					_showVettedToggleStr = "vetted = 'U'";
+				}
+				searchItems(_currentSearch);
+			});
+
 			searchItems();
 		}
 
@@ -141,11 +152,12 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 			query.orderByFields = ["FID " + _sortOrder];
 			if (str){
 				var searchStr = str.replace("'","''");
-				query.where = "(title LIKE '%" + searchStr + "%' OR content LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%' OR standardPlace LIKE '%" + searchStr + "%')";
+				query.where = (_showVettedToggleStr ? _showVettedToggleStr + ' AND ' : '') + "(title LIKE '%" + searchStr + "%' OR content LIKE '%" + searchStr + "%' OR FID LIKE '%" + searchStr + "%' OR standardPlace LIKE '%" + searchStr + "%')";
 			}
 			else{
-				query.where = "vetted = 'U'";
+				query.where = _showVettedToggleStr;
 			}
+			console.log(query.where);
 
 			var queryTask = new QueryTask(_storyLayer.url);
 			queryTask.execute(query,function(result){	
