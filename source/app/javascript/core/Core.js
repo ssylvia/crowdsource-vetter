@@ -22,7 +22,8 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 
 		function init ()
 		{
-			$.get('/api/getServiceUrl').done(function(res){
+			var story = location.pathname.toLowerCase().split('/')[$.inArray('stories',location.pathname.toLowerCase().split('/'))+1];
+			$.get('/api/' + story + '/getServiceUrl').then(function(res){
 				var urlSearch = urlUtils.urlToObject(location.href);
 				if (res){
 					_storyLayer = new FeatureLayer(res);
@@ -39,6 +40,17 @@ define(["storymaps/utils/MovableGraphic","esri/layers/FeatureLayer","dojo/_base/
 
 				if (_storyLayer){
 					login();
+				}
+			},function(){
+				var urlSearch = urlUtils.urlToObject(location.href);
+				if (urlSearch.query && urlSearch.query.service){
+					_storyLayer = new FeatureLayer(urlSearch.query.service);
+				}
+				else if (configOptions.featureService){
+					_storyLayer = new FeatureLayer(configOptions.featureService);
+				}
+				else{
+					promptForService();
 				}
 			});
 		}
